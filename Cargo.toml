@@ -1,7 +1,16 @@
 [package]
-name = "bar"
+name = "rusqlite_tools"
 version = "0.1.0"
 edition = "2021"
+
+[workspace]
+members = [
+    "macros",
+    "macro_tests"
+]
+
+[dependencies.macros]
+path = "./macros/"
 
 [dependencies]
 rusqlite = "0.28"
@@ -14,11 +23,6 @@ features = ["derive"]
 version = "0.4"
 features = ["clock", "serde"]
 
-[dependencies.macros]
-path = "./macros/"
-
-[workspace]
-members = [
-    "macros",
-    "macro_tests"
-]
+[dev-dependencies.rusqlite]
+rusqlite = "0.28"
+features = ["bundled"]

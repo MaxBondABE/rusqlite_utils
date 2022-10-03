@@ -18,7 +18,7 @@ impl<'stmt, T> Id<'stmt> for IntegerId<T> {}
 impl<T> Copy for IntegerId<T> {}
 impl<T> Clone for IntegerId<T> {
     fn clone(&self) -> Self {
-        Self(self.0.clone(), PhantomData)
+        Self(self.0, PhantomData)
     }
 }
 impl<T> std::fmt::Debug for IntegerId<T> {
@@ -64,5 +64,103 @@ impl<'stmt, T> TryFrom<&Row<'stmt>> for IntegerId<T> {
 
     fn try_from(value: &Row<'stmt>) -> Result<Self, Self::Error> {
         Ok(Self(value.get("id")?, PhantomData))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use rusqlite::Connection;
+
+    use super::*;
+
+    #[test]
+    fn insert_and_retrieve_id() {
+        let db = Connection::open_in_memory().expect("Failed to open connection");
+        type FooId = IntegerId<()>;
+
+        db.execute(
+            "create table foo( id integer primary key autoincrement )",
+            (),
+        )
+        .expect("Failed to create table");
+        let res = db.query_row("insert into foo default values returning *", (), |row| {
+            let v: FooId = row.try_into()?;
+            Ok(v)
+        });
+        assert!(
+            res.is_ok(),
+            "Failed to retrieve id from database: {:?}",
+            res
+        );
+    }
+
+    #[test]
+    fn select_by_id() {
+        let db = Connection::open_in_memory().expect("Failed to open connection");
+        type FooId = IntegerId<()>;
+
+        db.execute(
+            "create table foo( id integer primary key autoincrement, bar integer )",
+            (),
+        )
+        .expect("Failed to create table");
+        let res = db.query_row("insert into foo(bar) values(10) returning *", (), |row| {
+            let v: FooId = row.try_into()?;
+            Ok(v)
+        });
+        assert!(
+            res.is_ok(),
+            "Failed to retrieve id from database: {:?}",
+            res
+        );
+        let id = res.unwrap();
+
+        let res = db.query_row("select bar from foo where id = ?", (id,), |row| {
+            let v: i64 = row.get("bar")?;
+            Ok(v)
+        });
+        assert!(
+            res.is_ok(),
+            "Failed to retrieve id from database: {:?}",
+            res
+        );
+        let value = res.unwrap();
+        assert_eq!(value, 10);
+    }
+
+    #[test]
+    fn retrieve_id_as_part_of_struct() {
+        let db = Connection::open_in_memory().expect("Failed to open connection");
+        type FooId = IntegerId<Foo>;
+        #[derive(PartialEq, Eq, Debug)]
+        struct Foo {
+            id: FooId,
+            bar: i64,
+        }
+        impl<'stmt> TryFrom<&Row<'stmt>> for Foo {
+            type Error = rusqlite::Error;
+
+            fn try_from(value: &Row<'stmt>) -> Result<Self, Self::Error> {
+                Ok(Self {
+                    id: value.get("id")?,
+                    bar: value.get("bar")?,
+                })
+            }
+        }
+
+        db.execute(
+            "create table foo( id integer primary key autoincrement, bar integer )",
+            (),
+        )
+        .expect("Failed to create table");
+        let res = db.query_row("insert into foo(bar) values(10) returning *", (), |row| {
+            let v: Foo = row.try_into()?;
+            Ok(v)
+        });
+        assert!(
+            res.is_ok(),
+            "Failed to retrieve id from database: {:?}",
+            res
+        );
     }
 }
