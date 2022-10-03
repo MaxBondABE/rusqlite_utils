@@ -1,0 +1,24 @@
+[package]
+name = "bar"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rusqlite = "0.28"
+
+[dependencies.serde]
+version = "1"
+features = ["derive"]
+
+[dependencies.chrono]
+version = "0.4"
+features = ["clock", "serde"]
+
+[dependencies.macros]
+path = "./macros/"
+
+[workspace]
+members = [
+    "macros",
+    "macro_tests"
+]
