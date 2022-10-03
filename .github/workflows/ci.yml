@@ -26,7 +26,8 @@ jobs:
       - name: Unit Tests
         uses: actions-rs/cargo@v1
         with:
-          command: test --workspace
+          command: test
+          args: --workspace
 
       - name: Linting Tests
         uses: actions-rs/cargo@v1
