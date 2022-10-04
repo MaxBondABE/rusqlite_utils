@@ -6,5 +6,5 @@ edition = "2021"
 [dependencies.rusqlite]
 version = "0.28"
 
-[dependencies.macros]
-path = "../macros/"
+[dependencies.rusqlite_utils_macros]
+path = "../rusqlite_utils_macros/"

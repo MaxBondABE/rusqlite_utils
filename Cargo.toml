@@ -2,16 +2,22 @@
 name = "rusqlite_utils"
 version = "0.1.0"
 edition = "2021"
+licence = "MIT"
+repository = "https://github.com/MaxBondABE/rusqlite_utils"
+documentation = "https://docs.rs/rusqlite_utils"
+readme = "README.md"
+keywords = ["sqlite", "sqlite3", "rusqlite"]
+categories = ["database"]
 
 [workspace]
 members = [
-    "macros",
+    "rusqlite_utils_macros",
     "macro_tests"
 ]
 
-[dependencies.macros]
+[dependencies.rusqlite_utils_macros]
 version = "0.1.0"
-path = "./macros/"
+path = "./rusqlite_utils_macros/"
 
 [dependencies]
 rusqlite = "0.28"

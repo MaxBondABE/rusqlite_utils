@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use macros::TryFromRow;
+use rusqlite_utils_macros::TryFromRow;
 use rusqlite::Connection;
 
 #[test]
