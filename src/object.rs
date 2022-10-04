@@ -5,7 +5,7 @@ use rusqlite::{
 use serde::{de::DeserializeOwned, Serialize};
 
 /// Represents a BSON-encoded column value stored as a SQLite `BLOB`. T should implement
-/// serde Serialize & Deserialize.
+/// serde Serialize & DeserializeOwned.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BsonObject<T>(T);
 impl<T> BsonObject<T> {
@@ -40,7 +40,7 @@ impl<T: DeserializeOwned> FromSql for BsonObject<T> {
 }
 
 /// Represents a JSON-encoded column value stored as a SQLite `TEXT`. T should implement
-/// serde Serialize & Deserialize.
+/// serde Serialize & DeserializeOwned.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct JsonObject<T>(T);
 impl<T> JsonObject<T> {
@@ -92,33 +92,20 @@ mod test {
         struct Bar {
             a: i64,
         }
-        let f = Foo { bar: BsonObject::new(Bar { a: 10 }) };
+        let f = Foo {
+            bar: BsonObject::new(Bar { a: 10 }),
+        };
         db.execute("create table foo( bar blob ) strict", ())
             .expect("failed to create table");
 
-        let res = db.execute(
-            "insert into foo(bar) values (?)",
-            (&f.bar, )
-        );
-        assert!(
-            res.is_ok(),
-            "Failed to insert BsonObject: {:?}",
-            res
-        );
+        let res = db.execute("insert into foo(bar) values (?)", (&f.bar,));
+        assert!(res.is_ok(), "Failed to insert BsonObject: {:?}", res);
 
-        let res = db.query_row(
-            "select * from foo",
-            (),
-            |row| {
-                let bar: BsonObject<Bar> = row.get("bar")?;
-                Ok(Foo { bar })
-            }
-        );
-        assert!(
-            res.is_ok(),
-            "Failed to retrieve BsonObject: {:?}",
-            res
-        );
+        let res = db.query_row("select * from foo", (), |row| {
+            let bar: BsonObject<Bar> = row.get("bar")?;
+            Ok(Foo { bar })
+        });
+        assert!(res.is_ok(), "Failed to retrieve BsonObject: {:?}", res);
         let value = res.unwrap();
         assert_eq!(value.bar.unwrap(), Bar { a: 10 });
     }
@@ -134,33 +121,20 @@ mod test {
         struct Bar {
             a: i64,
         }
-        let f = Foo { bar: JsonObject::new(Bar { a: 10 }) };
+        let f = Foo {
+            bar: JsonObject::new(Bar { a: 10 }),
+        };
         db.execute("create table foo( bar text ) strict", ())
             .expect("failed to create table");
 
-        let res = db.execute(
-            "insert into foo(bar) values (?)",
-            (&f.bar, )
-        );
-        assert!(
-            res.is_ok(),
-            "Failed to insert JsonObject: {:?}",
-            res
-        );
+        let res = db.execute("insert into foo(bar) values (?)", (&f.bar,));
+        assert!(res.is_ok(), "Failed to insert JsonObject: {:?}", res);
 
-        let res = db.query_row(
-            "select * from foo",
-            (),
-            |row| {
-                let bar: JsonObject<Bar> = row.get("bar")?;
-                Ok(Foo { bar })
-            }
-        );
-        assert!(
-            res.is_ok(),
-            "Failed to retrieve JsonObject: {:?}",
-            res
-        );
+        let res = db.query_row("select * from foo", (), |row| {
+            let bar: JsonObject<Bar> = row.get("bar")?;
+            Ok(Foo { bar })
+        });
+        assert!(res.is_ok(), "Failed to retrieve JsonObject: {:?}", res);
         let value = res.unwrap();
         assert_eq!(value.bar.unwrap(), Bar { a: 10 });
     }
