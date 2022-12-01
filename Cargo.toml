@@ -2,7 +2,7 @@
 name = "rusqlite_utils"
 version = "0.1.0"
 edition = "2021"
-licence = "MIT"
+license = "MIT"
 repository = "https://github.com/MaxBondABE/rusqlite_utils"
 documentation = "https://docs.rs/rusqlite_utils"
 readme = "README.md"
