@@ -7,8 +7,11 @@ use rusqlite::{
 };
 use serde::{Deserialize, Serialize};
 
+use super::{Microseconds, Milliseconds, Nanoseconds, Seconds};
+
 pub type UnixEpoch = Timestamp<Seconds>;
 pub type TimestampMillis = Timestamp<Milliseconds>;
+pub type TimestampMicros = Timestamp<Microseconds>;
 pub type TimestampNanos = Timestamp<Nanoseconds>;
 
 type _UtcDateTime = chrono::DateTime<chrono::Utc>;
@@ -20,6 +23,9 @@ type _UtcDateTime = chrono::DateTime<chrono::Utc>;
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Timestamp<Scale>(_UtcDateTime, PhantomData<Scale>);
 impl<T> Timestamp<T> {
+    pub fn unwrap(self) -> _UtcDateTime {
+        self.0
+    }
     pub fn now() -> Self {
         chrono::Utc::now().into()
     }
@@ -35,14 +41,10 @@ impl<T> From<Timestamp<T>> for _UtcDateTime {
     }
 }
 
-/// Record timestamps at the second scale.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct Seconds {}
-
 impl FromSql for Timestamp<Seconds> {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
-        let v = value.as_i64()?;
-        let timestamp = NaiveDateTime::from_timestamp(v, 0);
+        let db_seconds = value.as_i64()?;
+        let timestamp = NaiveDateTime::from_timestamp(db_seconds, 0);
         Ok(_UtcDateTime::from_utc(timestamp, chrono::Utc).into())
     }
 }
@@ -52,18 +54,14 @@ impl ToSql for Timestamp<Seconds> {
     }
 }
 
-/// Record timestamps at the millisecond scale.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct Milliseconds {}
-
 impl FromSql for Timestamp<Milliseconds> {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         const MILLI_PER_SECOND: i64 = 1000;
         const NANO_PER_MILLI: i64 = 1_000_000;
 
-        let v = value.as_i64()?;
-        let v_secs = v.div_euclid(MILLI_PER_SECOND);
-        let v_nanos = (v.rem_euclid(MILLI_PER_SECOND) * NANO_PER_MILLI) as u32;
+        let db_millis = value.as_i64()?;
+        let v_secs = db_millis.div_euclid(MILLI_PER_SECOND);
+        let v_nanos = (db_millis.rem_euclid(MILLI_PER_SECOND) * NANO_PER_MILLI) as u32;
         // Because v_nanos is at most 999000, we can safely cast down to u32
 
         let timestamp = NaiveDateTime::from_timestamp(v_secs, v_nanos);
@@ -76,17 +74,33 @@ impl ToSql for Timestamp<Milliseconds> {
     }
 }
 
-/// Record timestamps at the nanosecond scale.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct Nanoseconds {}
+impl FromSql for Timestamp<Microseconds> {
+    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+        const MICROS_PER_SECOND: i64 = 1_000_000;
+        const NANO_PER_MICRO: i64 = 1_000;
+
+        let db_micros = value.as_i64()?;
+        let v_secs = db_micros.div_euclid(MICROS_PER_SECOND);
+        let v_nanos = (db_micros.rem_euclid(MICROS_PER_SECOND) * NANO_PER_MICRO) as u32;
+        // Because v_nanos is at most 999000, we can safely cast down to u32
+
+        let timestamp = NaiveDateTime::from_timestamp(v_secs, v_nanos);
+        Ok(_UtcDateTime::from_utc(timestamp, chrono::Utc).into())
+    }
+}
+impl ToSql for Timestamp<Microseconds> {
+    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+        Ok(ToSqlOutput::from(self.0.timestamp_micros()))
+    }
+}
 
 impl FromSql for Timestamp<Nanoseconds> {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         const NANO_PER_SECOND: i64 = 1_000_000_000;
 
-        let v = value.as_i64()?;
-        let v_secs = v.div_euclid(NANO_PER_SECOND);
-        let v_nanos = v.rem_euclid(NANO_PER_SECOND) as u32;
+        let db_nanos = value.as_i64()?;
+        let v_secs = db_nanos.div_euclid(NANO_PER_SECOND);
+        let v_nanos = db_nanos.rem_euclid(NANO_PER_SECOND) as u32;
         // Because v_nanos is at most 999999, we can safely cast down to u32
 
         let timestamp = NaiveDateTime::from_timestamp(v_secs, v_nanos);
