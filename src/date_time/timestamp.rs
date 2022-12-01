@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use chrono::NaiveDateTime;
 use rusqlite::{
-    types::{FromSql, ToSqlOutput},
+    types::{FromSql, FromSqlError, ToSqlOutput},
     ToSql,
 };
 use serde::{Deserialize, Serialize};
@@ -44,8 +44,11 @@ impl<T> From<Timestamp<T>> for _UtcDateTime {
 impl FromSql for Timestamp<Seconds> {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let db_seconds = value.as_i64()?;
-        let timestamp = NaiveDateTime::from_timestamp(db_seconds, 0);
-        Ok(_UtcDateTime::from_utc(timestamp, chrono::Utc).into())
+        if let Some(timestamp) = NaiveDateTime::from_timestamp_opt(db_seconds, 0) {
+            Ok(_UtcDateTime::from_utc(timestamp, chrono::Utc).into())
+        } else {
+            Err(FromSqlError::OutOfRange(db_seconds))
+        }
     }
 }
 impl ToSql for Timestamp<Seconds> {
@@ -64,8 +67,11 @@ impl FromSql for Timestamp<Milliseconds> {
         let v_nanos = (db_millis.rem_euclid(MILLI_PER_SECOND) * NANO_PER_MILLI) as u32;
         // Because v_nanos is at most 999000, we can safely cast down to u32
 
-        let timestamp = NaiveDateTime::from_timestamp(v_secs, v_nanos);
-        Ok(_UtcDateTime::from_utc(timestamp, chrono::Utc).into())
+        if let Some(timestamp) = NaiveDateTime::from_timestamp_opt(v_secs, v_nanos) {
+            Ok(_UtcDateTime::from_utc(timestamp, chrono::Utc).into())
+        } else {
+            Err(FromSqlError::OutOfRange(db_millis))
+        }
     }
 }
 impl ToSql for Timestamp<Milliseconds> {
@@ -84,8 +90,11 @@ impl FromSql for Timestamp<Microseconds> {
         let v_nanos = (db_micros.rem_euclid(MICROS_PER_SECOND) * NANO_PER_MICRO) as u32;
         // Because v_nanos is at most 999000, we can safely cast down to u32
 
-        let timestamp = NaiveDateTime::from_timestamp(v_secs, v_nanos);
-        Ok(_UtcDateTime::from_utc(timestamp, chrono::Utc).into())
+        if let Some(timestamp) = NaiveDateTime::from_timestamp_opt(v_secs, v_nanos) {
+            Ok(_UtcDateTime::from_utc(timestamp, chrono::Utc).into())
+        } else {
+            Err(FromSqlError::OutOfRange(db_micros))
+        }
     }
 }
 impl ToSql for Timestamp<Microseconds> {
@@ -103,8 +112,11 @@ impl FromSql for Timestamp<Nanoseconds> {
         let v_nanos = db_nanos.rem_euclid(NANO_PER_SECOND) as u32;
         // Because v_nanos is at most 999999, we can safely cast down to u32
 
-        let timestamp = NaiveDateTime::from_timestamp(v_secs, v_nanos);
-        Ok(_UtcDateTime::from_utc(timestamp, chrono::Utc).into())
+        if let Some(timestamp) = NaiveDateTime::from_timestamp_opt(v_secs, v_nanos) {
+            Ok(_UtcDateTime::from_utc(timestamp, chrono::Utc).into())
+        } else {
+            Err(FromSqlError::OutOfRange(db_nanos))
+        }
     }
 }
 impl ToSql for Timestamp<Nanoseconds> {

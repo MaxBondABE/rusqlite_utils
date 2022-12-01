@@ -37,7 +37,7 @@ impl FromSql for Duration<Seconds> {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let db_seconds = value.as_i64()?;
         if let Ok(duration) =
-            chrono::Duration::from_std(std::time::Duration::from_secs(db_seconds.abs() as u64))
+            chrono::Duration::from_std(std::time::Duration::from_secs(db_seconds.unsigned_abs()))
         {
             if db_seconds >= 0 {
                 Ok(Self(duration, PhantomData))
@@ -59,7 +59,7 @@ impl FromSql for Duration<Milliseconds> {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let db_seconds = value.as_i64()?;
         if let Ok(duration) =
-            chrono::Duration::from_std(std::time::Duration::from_millis(db_seconds.abs() as u64))
+            chrono::Duration::from_std(std::time::Duration::from_millis(db_seconds.unsigned_abs()))
         {
             if db_seconds >= 0 {
                 Ok(Self(duration, PhantomData))
@@ -81,7 +81,7 @@ impl FromSql for Duration<Microseconds> {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let db_seconds = value.as_i64()?;
         if let Ok(duration) =
-            chrono::Duration::from_std(std::time::Duration::from_micros(db_seconds.abs() as u64))
+            chrono::Duration::from_std(std::time::Duration::from_micros(db_seconds.unsigned_abs()))
         {
             if db_seconds >= 0 {
                 Ok(Self(duration, PhantomData))
@@ -109,7 +109,7 @@ impl FromSql for Duration<Nanoseconds> {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let db_seconds = value.as_i64()?;
         if let Ok(duration) =
-            chrono::Duration::from_std(std::time::Duration::from_nanos(db_seconds.abs() as u64))
+            chrono::Duration::from_std(std::time::Duration::from_nanos(db_seconds.unsigned_abs()))
         {
             if db_seconds >= 0 {
                 Ok(Self(duration, PhantomData))
