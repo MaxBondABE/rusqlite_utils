@@ -2,7 +2,7 @@
 name = "rusqlite_utils"
 version = "0.1.0"
 edition = "2021"
-licence = "MIT"
+license = "MIT"
 repository = "https://github.com/MaxBondABE/rusqlite_utils"
 documentation = "https://docs.rs/rusqlite_utils"
 readme = "README.md"
@@ -23,6 +23,7 @@ path = "./rusqlite_utils_macros/"
 rusqlite = "0.28"
 serde_json = "1.0"
 bson = "2.4"
+time = "0.1.44"
 
 [dependencies.serde]
 version = "1"
@@ -35,3 +36,6 @@ features = ["clock", "serde"]
 [dev-dependencies.rusqlite]
 version = "0.28"
 features = ["bundled"]
+
+[dependencies.thiserror]
+version = "1.0"

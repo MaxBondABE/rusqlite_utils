@@ -1,7 +1,7 @@
 #![cfg(test)]
 
-use rusqlite_utils_macros::TryFromRow;
 use rusqlite::Connection;
+use rusqlite_utils_macros::TryFromRow;
 
 #[test]
 fn smoke_test() {
