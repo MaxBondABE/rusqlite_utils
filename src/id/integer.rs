@@ -12,6 +12,12 @@ use super::Id;
 pub struct IntegerId<T>(i64, PhantomData<T>);
 impl<'stmt, T> Id<'stmt> for IntegerId<T> {}
 
+impl<T> std::fmt::Display for IntegerId<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 // The following are normally implemented via derive; however, this
 // would put unneccessary requirements on T.
 
